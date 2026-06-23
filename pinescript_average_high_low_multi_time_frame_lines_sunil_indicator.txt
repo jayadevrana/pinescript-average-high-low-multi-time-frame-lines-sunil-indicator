@@ -1,0 +1,47 @@
+//@version=6
+indicator('Average High-Low Multi Time Frame Lines Sunil', overlay = true)
+
+// User inputs for desired time frames
+timeframe1 = '30'//input.timeframe('30', title = 'Time Frame 1 (Default: 30 minutes)')
+timeframe2 = '60'//input.timeframe('60', title = 'Time Frame 2 (Default: 1 hour)')
+timeframe3 = '180'//input.timeframe('180', title = 'Time Frame 3 (Default: 3 hours)')
+timeframe4 = 'D'//input.timeframe('D', title = 'Time Frame 4 (Default: 1 day)')
+
+// Function to calculate average of high and low
+average_high_low(high, low) =>
+    (high + low) / 2
+
+// Calculate average high-low for selected time frames
+avg_tf1 = request.security(syminfo.tickerid, timeframe1, average_high_low(high, low))
+avg_tf2 = request.security(syminfo.tickerid, timeframe2, average_high_low(high, low))
+avg_tf3 = request.security(syminfo.tickerid, timeframe3, average_high_low(high, low))
+avg_tf4 = request.security(syminfo.tickerid, timeframe4, average_high_low(high, low))
+
+// Plot the lines
+plot(avg_tf1, color = color.blue, linewidth = 2, title = 'Time Frame 1 Avg High-Low')
+plot(avg_tf2, color = color.green, linewidth = 2, title = 'Time Frame 2 Avg High-Low')
+plot(avg_tf3, color = color.red, linewidth = 2, title = 'Time Frame 3 Avg High-Low')
+//plot(avg_tf4, color = color.purple, linewidth = 2, title = 'Time Frame 4 Avg High-Low')
+
+// Condition to check if all four lines meet
+all_lines_meet = avg_tf1 == avg_tf2 and avg_tf2 == avg_tf3 and avg_tf3 == avg_tf4
+buyzone = close > avg_tf1 and close > avg_tf2 and close > avg_tf3 and close > avg_tf4
+sellzone = close < avg_tf1 and close < avg_tf2 and close < avg_tf3 and close < avg_tf4
+
+// Plot background colors for meeting points, buy zones, and sell zones
+bgcolor(all_lines_meet ? color.new(color.blue, 10) : na, title = 'Highlight Meeting Points')
+bgcolor(buyzone ? color.new(color.green, 80) : na, title = 'Buy Zone')
+bgcolor(sellzone ? color.new(color.red, 80) : na, title = 'Sell Zone')
+
+buy = ta.crossover(close,avg_tf1)
+sell = ta.crossunder(close,avg_tf3)
+
+
+plotshape(buy, title='Buy', text='Buy', location=location.belowbar, style=shape.labelup, size=size.small, color=color.new(color.green, 0), textcolor=color.new(color.white, 0),offset = 0)
+plotshape(sell, title='Sell', text='Sell', location=location.abovebar, style=shape.labeldown, size=size.small, color=color.new(color.red, 0), textcolor=color.new(color.white, 0),offset = 0)
+
+if buy 
+    alert('Gold Breakout Alert \n\n'+syminfo.ticker+'\n \nBUY SIGNAL\n \nAt price  '+ str.tostring(close)+'\n\nTime frame :=  '+timeframe.period+'',alert.freq_once_per_bar_close)
+
+if sell
+    alert('Gold Breakout Alert \n\n'+syminfo.ticker+'\n \nSELL SIGNAL\n \nAt price  '+ str.tostring(close)+'\n\nTime frame :=  '+timeframe.period+'',alert.freq_once_per_bar_close)
